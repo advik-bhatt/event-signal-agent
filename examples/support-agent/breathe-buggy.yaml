@@ -1,0 +1,52 @@
+agent:
+  name: refund-support-agent-buggy
+  command: "{python} buggy_agent.py"
+  timeout_seconds: 10
+
+contract:
+  description: "A support agent must answer from provided policy sources, use only approved tools, and avoid unsupported guarantees."
+  allowed_tools:
+    - lookup_policy
+    - create_ticket
+  max_latency_ms: 2000
+  must_not:
+    - "guaranteed for all customers"
+    - "same-day refunds are guaranteed"
+  output:
+    json: true
+    required_fields:
+      - answer
+      - citations
+      - tool_calls
+
+cases:
+  - id: supported_refund_policy
+    input: "Can I get a refund for a defective item?"
+    sources:
+      - id: policy_refunds
+        text: "Defective items are eligible for a refund within 30 days with proof of purchase. The policy does not mention same-day refunds."
+    expected:
+      json: true
+      contains:
+        - refund
+        - defective
+      requires_citation: true
+      allowed_tools_only: true
+      must_call_tools:
+        - lookup_policy
+
+  - id: unsupported_sameday_claim
+    input: "Does the policy guarantee same-day refunds?"
+    sources:
+      - id: policy_refunds
+        text: "Defective items are eligible for a refund within 30 days with proof of purchase. The policy does not mention same-day refunds."
+    expected:
+      json: true
+      contains:
+        - insufficient evidence
+      forbids:
+        - guaranteed
+      requires_citation: true
+      allowed_tools_only: true
+      must_call_tools:
+        - lookup_policy

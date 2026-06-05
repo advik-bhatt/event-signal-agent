@@ -1,0 +1,57 @@
+agent:
+  name: nytechweek-event-scout
+  command: "{python} event_scout.py"
+  timeout_seconds: 30
+
+contract:
+  description: >
+    Event scout must return structured rankings from only the provided event list.
+    It must not invent events, must cite sources, and must stay within allowed tools.
+  allowed_tools:
+    - rank_events
+  max_latency_ms: 25000
+  must_not:
+    - "i cannot"
+    - "as an ai"
+  output:
+    json: true
+    required_fields:
+      - ranked_events
+      - reasoning
+      - citations
+      - tool_calls
+
+cases:
+  - id: rank_ai_events_by_interest
+    input: "AI agents, developer tools, LLMs in production — no hype, real code"
+    sources:
+      - id: evt_no_forking_way
+        text: "AI Builders Showcase — Jun 4, 6PM, Downtown NYC. Live code demos of production AI systems. Terminal-first crowd."
+      - id: evt_ai_founders
+        text: "AI Founders Mixer — Jun 5, 7PM, SoHo. Networking for AI startup founders and investors. Pitch practice welcome."
+      - id: evt_devtools_panel
+        text: "The Future of Dev Tools — Jun 6, 5PM, Brooklyn. Panel on AI-assisted coding, CI/CD, and agent infrastructure."
+      - id: evt_growth_marketing
+        text: "Growth Marketing with AI — Jun 5, 6PM, Midtown. Non-technical marketers learning ChatGPT prompt tricks."
+      - id: evt_llm_in_prod
+        text: "LLMs in Production: What Actually Works — Jun 7, 2PM, Lower East Side. Engineers sharing war stories: latency, evals, hallucination, cost."
+    expected:
+      json: true
+      requires_citation: true
+      allowed_tools_only: true
+      must_call_tools:
+        - rank_events
+
+  - id: reject_hallucinated_events
+    input: "blockchain, web3, NFT meetups"
+    sources:
+      - id: evt_web3_mixer
+        text: "Web3 Builder Night — Jun 5, 8PM, FiDi. NFT creators and DeFi builders."
+      - id: evt_crypto_panel
+        text: "Crypto Regulation Panel — Jun 6, 4PM, Midtown. Legal experts on SEC policy."
+    expected:
+      json: true
+      requires_citation: true
+      allowed_tools_only: true
+      must_call_tools:
+        - rank_events
